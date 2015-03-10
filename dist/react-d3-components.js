@@ -803,12 +803,34 @@ var DefaultScalesMixin = {
 		var values = _props.values;
 
 		var data = this._data;
+		var datum = x(values(data[0])[0]);
 
-		if (Number.isFinite(x(values(data[0])[0]))) {
+		if (Object.prototype.toString.call(datum) == "[object Date]") {
+			return this._makeDateXScale();
+		} else if (isFinite(datum)) {
 			return this._makeLinearXScale();
 		} else {
 			return this._makeOrdinalXScale();
 		}
+	},
+
+	_makeDateXScale: function _makeDateXScale() {
+		var _props = this.props;
+		var x = _props.x;
+		var values = _props.values;
+		var data = this._data;
+		var innerWidth = this._innerWidth;
+
+		var extents = d3.extent(Array.prototype.concat.apply([], data.map(function (stack) {
+			return values(stack).map(function (e) {
+				return x(e);
+			});
+		})));
+		var scale = d3.time.scale().domain(extents).range([0, innerWidth]);
+		var zero = extents[0];
+		var xIntercept = scale(zero);
+
+		return [scale, xIntercept];
 	},
 
 	_makeLinearXScale: function _makeLinearXScale() {
@@ -854,7 +876,7 @@ var DefaultScalesMixin = {
 
 		var data = this._data;
 
-		if (Number.isFinite(y(values(data[0])[0]))) {
+		if (isFinite(y(values(data[0])[0]))) {
 			return this._makeLinearYScale();
 		} else {
 			return this._makeOrdinalYScale();
@@ -875,7 +897,7 @@ var DefaultScalesMixin = {
 			});
 		})));
 
-		extents = [d3.min([0, extents[0]]), extents[1]];
+		// extents = [d3.min([0, extents[0]]), extents[1]];
 
 		var scale = d3.scale.linear().domain(extents).range([innerHeight, 0]);
 
