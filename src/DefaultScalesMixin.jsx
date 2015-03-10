@@ -39,12 +39,34 @@ let DefaultScalesMixin = {
 	_makeXScale() {
 		let {x, values} = this.props;
 		let data = this._data;
+		let datum = x(values(data[0])[0]);
 
-		if (Number.isFinite(x(values(data[0])[0]))) {
+		if (Object.prototype.toString.call(datum) == '[object Date]') {
+			return this._makeDateXScale();
+		} else if (isFinite(datum)) {
 			return this._makeLinearXScale();
 		} else {
 			return this._makeOrdinalXScale();
 		}
+	},
+
+	_makeDateXScale() {
+		let {x, values} = this.props;
+		let [data, innerWidth] = [this._data, this._innerWidth];
+
+		let extents = d3.extent(Array.prototype.concat.apply([],
+															 data.map(stack => {
+																 return values(stack).map(e => {
+																	 return x(e);
+																 });
+															 })));
+		let scale = d3.time.scale()
+				.domain(extents)
+				.range([0,innerWidth]);
+		let zero = extents[0];
+		let xIntercept = scale(zero);
+
+		return [scale, xIntercept];
 	},
 
 	_makeLinearXScale() {
@@ -83,7 +105,7 @@ let DefaultScalesMixin = {
 		let {y, values} = this.props;
 		let data = this._data;
 
-		if (Number.isFinite(y(values(data[0])[0]))) {
+		if (isFinite(y(values(data[0])[0]))) {
 			return this._makeLinearYScale();
 		} else {
 			return this._makeOrdinalYScale();
@@ -101,7 +123,7 @@ let DefaultScalesMixin = {
 																 });
 															 })));
 
-		extents = [d3.min([0, extents[0]]), extents[1]];
+		// extents = [d3.min([0, extents[0]]), extents[1]];
 
 		let scale = d3.scale.linear()
 				.domain(extents)
